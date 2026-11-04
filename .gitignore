@@ -1,0 +1,56 @@
+# Environment
+.env
+*.env
+backend/venv/
+
+# Database & Chroma
+gallery.db
+chroma_data/
+*.sqlite
+*.sqlite3
+
+# Large Media & Archives
+*.zip
+*.ZIP
+*.tar.gz
+*사진들*
+*프로토타입*
+*프로토타입*
+assets/sample_photos/
+!assets/sample_photos/.gitkeep
+
+# Ignore all media photos except Flutter app icons
+*.jpg
+*.JPG
+*.jpeg
+*.JPEG
+*.png
+*.PNG
+*.heic
+*.HEIC
+*.webp
+*.WEBP
+
+# Keep Flutter app icons & splash images
+!frontend/web/**
+!frontend/ios/Runner/Assets.xcassets/**
+!frontend/macos/Runner/Assets.xcassets/**
+!frontend/android/app/src/main/res/**
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Flutter / Dart
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/build/
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/macos/Pods/
+frontend/macos/.symlinks/
+.DS_Store

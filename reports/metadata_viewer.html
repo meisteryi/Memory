@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 갤러리 메타데이터 대시보드 (108장)</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --primary: #4361ee;
+            --text-main: #2b2d42;
+            --text-sub: #6c757d;
+            --border: #e9ecef;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Pretendard', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 24px;
+        }
+        header {
+            background: #fff;
+            padding: 20px 24px;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+            position: sticky;
+            top: 12px;
+            z-index: 100;
+        }
+        h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; color: #1e1e24; }
+        p.subtitle { font-size: 13px; color: var(--text-sub); }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+            align-items: center;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 280px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(67,97,238,0.2); }
+        
+        .filter-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .chip {
+            padding: 7px 13px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            background: #e9ecef;
+            color: #495057;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .chip:hover { background: #dee2e6; }
+        .chip.active { background: var(--primary); color: #fff; }
+        
+        .stats-bar {
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        }
+        .card-img-wrap {
+            width: 100%;
+            height: 230px;
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .card-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .badge-cat {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            text-transform: uppercase;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .cat-FOOD { background: #e63946; }
+        .cat-PERSON { background: #4361ee; }
+        .cat-SCENERY { background: #2a9d8f; }
+        .cat-SCREENSHOT { background: #7209b7; }
+        .cat-MEMO_OBJECT { background: #f77f00; }
+        .cat-OTHER { background: #6c757d; }
+        
+        .badge-id {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: monospace;
+        }
+        
+        .card-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            font-size: 13px;
+        }
+        .row-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-sub);
+            border-bottom: 1px dashed var(--border);
+            padding-bottom: 8px;
+        }
+        .row-meta .date { font-weight: 600; color: #212529; }
+        .meta-field {
+            margin-top: 2px;
+        }
+        .meta-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 3px;
+        }
+        .meta-value {
+            color: #212529;
+            line-height: 1.45;
+            word-break: break-all;
+            background: #f8f9fa;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            border: 1px solid #f1f3f5;
+        }
+        .tag-pill {
+            display: inline-block;
+            background: #eef2ff;
+            color: #3b5bdb;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin: 2px 3px 2px 0;
+            font-weight: 500;
+        }
+        .no-data {
+            color: #adb5bd;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📸 스마트 갤러리 메타데이터 대시보드</h1>
+    <p class="subtitle">gallery.db 및 ChromaDB에 인덱싱된 108장 사진의 비전 분석 메타데이터 열람 및 검색 진단</p>
+    
+    <div class="controls">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="키워드 검색 (예: 주황, 패딩, 카페, 바다, 2026-10)..." oninput="render()">
+        </div>
+        <div class="filter-chips" id="categoryFilters">
+            <button class="chip active" onclick="selectCategory('ALL', this)">전체 (108)</button>
+            <button class="chip" onclick="selectCategory('PERSON', this)">인물 (PERSON: 24)</button>
+            <button class="chip" onclick="selectCategory('FOOD', this)">음식 (FOOD: 22)</button>
+            <button class="chip" onclick="selectCategory('SCENERY', this)">풍경 (SCENERY: 28)</button>
+            <button class="chip" onclick="selectCategory('SCREENSHOT', this)">스크린샷 (SCREENSHOT: 15)</button>
+            <button class="chip" onclick="selectCategory('MEMO_OBJECT', this)">메모/사물 (MEMO: 11)</button>
+            <button class="chip" onclick="selectCategory('OTHER', this)">기타 (OTHER: 8)</button>
+        </div>
+    </div>
+    <div class="stats-bar" id="statsBar">표시 중: 108장</div>
+</header>
+
+<main class="grid" id="photoGrid"></main>
+
+<script>
+const photos = [{"id": "IMG_0079.JPG", "file_path": "assets/sample_photos/IMG_0079.JPG", "captured_date": "2026-11-03", "gps_latitude": 37.55793055555555, "gps_longitude": 126.93689722222223, "location_name": "버거킹", "people_traits": "", "atmosphere": "밝은 실내 조명, 패스트푸드점에서의 식사 시간", "background_details": "주황색 테이블 위에 놓인 검은색 쟁반", "main_objects": ["콜라 컵", "햄버거 포장지", "버거킹 종이 상자", "종이 봉투", "이어폰 케이스"], "photo_category": "FOOD"}, {"id": "IMG_0009.JPG", "file_path": "assets/sample_photos/IMG_0009.JPG", "captured_date": "2026-10-31", "gps_latitude": 37.58693055555556, "gps_longitude": 127.14066944444446, "location_name": "장자대로86번길", "people_traits": "", "atmosphere": "화창한 날 낮, 야외 공원", "background_details": "초록색 잔디밭, 갈색 보도블록, 멀리 아파트 단지와 단풍이 든 나무들", "main_objects": ["비석", "기념비", "안내판"], "photo_category": "SCENERY"}, {"id": "IMG_0094.JPG", "file_path": "assets/sample_photos/IMG_0094.JPG", "captured_date": "2026-10-31", "gps_latitude": 37.602444444444444, "gps_longitude": 127.14181388888889, "location_name": "구리역 환승대합실", "people_traits": "여러 명의 승객이 어두운 계열의 외투를 입고 에스컬레이터에 서서 이동 중임", "atmosphere": "현대적이고 깔끔한 지하철역 내부, 차분한 분위기", "background_details": "밝은 흰색 패널 벽면과 천장, 일렬로 배치된 LED 조명등", "main_objects": ["에스컬레이터", "천장 조명", "안내 표지판"], "photo_category": "SCENERY"}, {"id": "IMG_0052.JPG", "file_path": "assets/sample_photos/IMG_0052.JPG", "captured_date": "2026-10-26", "gps_latitude": 37.36419166666667, "gps_longitude": 126.92493333333334, "location_name": "궁내백두한양아파트", "people_traits": "", "atmosphere": "밝은 실내 조명, 차분한 작업 환경", "background_details": "책상 위, 흰색 키보드, 검은색 모니터 화면, 흰색 마우스", "main_objects": ["종이", "카메라 드로잉 스케치", "사물 드로잉 스케치", "키보드", "마우스"], "photo_category": "MEMO_OBJECT"}, {"id": "IMG_0054.JPG", "file_path": "assets/sample_photos/IMG_0054.JPG", "captured_date": "2026-10-24", "gps_latitude": 37.76488611111111, "gps_longitude": 128.90745555555557, "location_name": "남구길10번길", "people_traits": "", "atmosphere": "흐린 낮, 차분한 거리 풍경", "background_details": "흐린 하늘을 배경으로 한 흰색 간판과 유리문, 에어컨 실외기가 설치된 건물 외관", "main_objects": ["간판", "유리문", "에어컨 실외기"], "photo_category": "SCENERY"}, {"id": "IMG_0069.JPG", "file_path": "assets/sample_photos/IMG_0069.JPG", "captured_date": "2026-10-24", "gps_latitude": 37.77480833333333, "gps_longitude": 128.9451, "location_name": "창해로", "people_traits": "1명, 어두운 상의에 밝은 아우터를 걸치고 검은색 바지를 입은 채 모래사장에 서서 카메라를 바라보고 있음", "atmosphere": "흐린 날씨의 차분하고 쓸쓸한 분위기, 쌀쌀한 계절감", "background_details": "회색빛 흐린 하늘, 잔잔한 파도가 치는 바다, 넓은 모래사장", "main_objects": ["바다", "모래사장", "파도", "인물"], "photo_category": "PERSON"}, {"id": "IMG_0096.JPG", "file_path": "assets/sample_photos/IMG_0096.JPG", "captured_date": "2026-10-24", "gps_latitude": 37.776538888888886, "gps_longitude": 128.94188055555557, "location_name": "창해로", "people_traits": "와인색 후드티를 입고 캠핑 의자에 편안하게 앉아 음료를 들고 있는 남성과, 손으로 딸기 케이크 상자를 열고 있는 인물이 포함됨", "atmosphere": "여유롭고 자연스러운 분위기의 낮", "background_details": "소나무가 있는 모래사장과 바다가 보이는 야외 배경", "main_objects": ["후드티", "일회용 음료 컵", "딸기 케이크 상자", "캠핑 의자"], "photo_category": "PERSON"}, {"id": "IMG_0011.JPG", "file_path": "assets/sample_photos/IMG_0011.JPG", "captured_date": "2026-10-23", "gps_latitude": 37.75421111111111, "gps_longitude": 128.89872777777776, "location_name": "Jungang Market", "people_traits": "손으로 동그란 간식을 쥐고 있는 모습", "atmosphere": "야외에서 가볍게 간식을 먹는 일상적인 분위기", "background_details": "회색 벽돌 보도블록과 길거리", "main_objects": ["동그란 베이커리", "비닐 포장", "손", "가방"], "photo_category": "FOOD"}, {"id": "IMG_0026.JPG", "file_path": "assets/sample_photos/IMG_0026.JPG", "captured_date": "2026-10-23", "gps_latitude": 37.75533333333333, "gps_longitude": 128.8990472222222, "location_name": "은행나무길", "people_traits": "", "atmosphere": "캐주얼한 낮, 포장된 음식을 들고 이동하는 일상적인 순간", "background_details": "회색 보도블록 바닥", "main_objects": ["투명 비닐봉지", "포장용 종이 상자", "음식", "손글씨 메모 (상자 겉면에 적힌 글씨)"], "photo_category": "FOOD"}, {"id": "IMG_0040.JPG", "file_path": "assets/sample_photos/IMG_0040.JPG", "captured_date": "2026-10-23", "gps_latitude": 37.75477222222222, "gps_longitude": 128.89900277777778, "location_name": "금성로12번길", "people_traits": "손으로 음식이 담긴 상자를 들고 있는 모습", "atmosphere": "캐주얼하고 가벼운 야외 간식 시간", "background_details": "회색 보도블록과 야외 바닥", "main_objects": ["치즈볼", "떡볶이 떡 튀김", "케첩", "종이 상자"], "photo_category": "FOOD"}, {"id": "IMG_0014.JPG", "file_path": "assets/sample_photos/IMG_0014.JPG", "captured_date": "2026-10-21", "gps_latitude": 37.56528055555555, "gps_longitude": 126.98442777777778, "location_name": "명동9길", "people_traits": "", "atmosphere": "화창한 가을 낮, 맑고 청명한 분위기", "background_details": "갈색 타일로 마감된 고층 빌딩 외벽과 세로로 길게 이어진 유리 창문, 파란 하늘, 우측의 초록색과 노란색이 섞인 가로수 잎", "main_objects": ["고층 빌딩", "유리 창문", "건물 로고", "가로수"], "photo_category": "SCENERY"}, {"id": "IMG_0029.JPG", "file_path": "assets/sample_photos/IMG_0029.JPG", "captured_date": "2026-10-21", "gps_latitude": 37.55045, "gps_longitude": 126.62317777777777, "location_name": "하나글로벌캠퍼스", "people_traits": "", "atmosphere": "흐린 가을 날씨의 쌀쌀하고 차분한 캠퍼스 풍경", "background_details": "초록색 잔디 언덕, 현대식 유리 건물, 넓은 보도블록 광장, 소나무와 단풍나무", "main_objects": ["건물", "소나무", "잔디", "가로등", "간판"], "photo_category": "SCENERY"}, {"id": "IMG_0084.JPG", "file_path": "assets/sample_photos/IMG_0084.JPG", "captured_date": "2026-10-21", "gps_latitude": 37.36428333333333, "gps_longitude": 126.92505, "location_name": "궁내백두한양아파트", "people_traits": "인물 1명, 어두운 정장 재킷과 흰색 셔츠 차림, 거울을 보며 손으로 브이 포즈를 취하고 있음", "atmosphere": "현대적이고 깔끔한 실내 엘리베이터 안, 밝은 인공 조명", "background_details": "은색 금속 재질의 엘리베이터 내부 벽면과 거울, 다양한 광고 스티커와 안내문이 붙어 있음", "main_objects": ["스마트폰", "정장 재킷", "엘리베이터 거울", "광고 스티커"], "photo_category": "PERSON"}, {"id": "IMG_0099.JPG", "file_path": "assets/sample_photos/IMG_0099.JPG", "captured_date": "2026-10-21", "gps_latitude": 37.56543333333333, "gps_longitude": 126.984275, "location_name": "오봉집 명동점", "people_traits": "", "atmosphere": "캐주얼하고 편안한 실내 식사 분위기, 밝은 조명", "background_details": "어두운 색상의 사각형 테이블 위 은색 식판", "main_objects": ["햄버거", "감자튀김", "음료 컵", "케첩", "식판", "종이 포장지"], "photo_category": "FOOD"}, {"id": "IMG_0043.JPG", "file_path": "assets/sample_photos/IMG_0043.JPG", "captured_date": "2026-10-20", "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "학구적이고 차분한 실내 작업 공간, 낮 시간대", "background_details": "원목 책상 위, 노트북 컴퓨터, 손글씨가 가득 적힌 백색 출력물 문서들, 주황색 당근 모양 펜", "main_objects": ["노트북", "손글씨 문서", "당근 모양 펜", "원목 책상"], "photo_category": "MEMO_OBJECT"}, {"id": "IMG_0057.JPG", "file_path": "assets/sample_photos/IMG_0057.JPG", "captured_date": "2026-10-19", "gps_latitude": 37.36418611111111, "gps_longitude": 126.92492777777778, "location_name": "궁내백두한양아파트", "people_traits": "", "atmosphere": "구름이 가득한 흐린 낮 혹은 해 질 무렵의 차분한 분위기", "background_details": "하늘 전체에 펼쳐진 촘촘하고 물결치는 듯한 구름과 우측에 늘어선 고층 아파트 단지", "main_objects": ["구름", "하늘", "아파트"], "photo_category": "SCENERY"}, {"id": "IMG_0072.JPG", "file_path": "assets/sample_photos/IMG_0072.JPG", "captured_date": "2026-10-18", "gps_latitude": 37.36419166666667, "gps_longitude": 126.92495833333334, "location_name": "궁내백두한양아파트", "people_traits": "손으로 신분증을 들고 있는 모습", "atmosphere": "업무 또는 인증 처리 중인 디지털 환경", "background_details": "컴퓨터 화면 UI, 회색빛 배경", "main_objects": ["모니터 화면", "신분증", "마우스 커서", "UI 버튼"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0087.PNG", "file_path": "assets/sample_photos/IMG_0087.PNG", "captured_date": "2026-10-13", "gps_latitude": null, "gps_longitude": null, "location_name": "서울 ~ 강릉", "people_traits": "", "atmosphere": "디지털 화면, 정보 검색 중인 상황", "background_details": "파란색 상단바와 흰색 배경의 모바일 애플리케이션 인터페이스", "main_objects": ["스마트폰 화면", "KTX 기차 시간표", "예매 앱 UI"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0102.PNG", "file_path": "assets/sample_photos/IMG_0102.PNG", "captured_date": "2026-10-13", "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "정돈된, 디지털 화면, 일정 관리", "background_details": "흰색 배경의 모바일 캘린더 애플리케이션 화면", "main_objects": ["캘린더 앱", "날짜", "일정 텍스트"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0032.PNG", "file_path": "assets/sample_photos/IMG_0032.PNG", "captured_date": "2026-10-10", "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "디지털 화면, 메신저 대화 중", "background_details": "연한 보라빛과 회색조의 모바일 메신저 대화 화면", "main_objects": ["스마트폰 화면", "메신저 대화창", "프로필 사진"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0046.JPG", "file_path": "assets/sample_photos/IMG_0046.JPG", "captured_date": "2026-10-10", "gps_latitude": 37.36383055555556, "gps_longitude": 126.92481944444445, "location_name": "궁내백두한양아파트", "people_traits": "", "atmosphere": "정돈된 실내, 밝은 인공 조명, 차분한 공부 및 작업 공간 분위기", "background_details": "밝은 흰색 벽, 밝은 원목 마루 바닥, 책상과 수납장이 있는 실내 공간", "main_objects": ["컴퓨터 책상", "사무용 의자", "모니터", "키보드", "마우스", "삼각대", "프린터", "백팩", "마이크"], "photo_category": "SCENERY"}, {"id": "IMG_0060.JPG", "file_path": "assets/sample_photos/IMG_0060.JPG", "captured_date": "2026-10-10", "gps_latitude": 37.52757222222222, "gps_longitude": 127.04051111111112, "location_name": "카페베네", "people_traits": "", "atmosphere": "밝고 깔끔한 실내 조명", "background_details": "흰색 바탕의 노선도가 인쇄된 전동차 내부 안내판", "main_objects": ["지하철 노선도", "안내판"], "photo_category": "MEMO_OBJECT"}, {"id": "IMG_0075.JPG", "file_path": "assets/sample_photos/IMG_0075.JPG", "captured_date": "2026-10-09", "gps_latitude": 37.358647222222224, "gps_longitude": 126.93064166666667, "location_name": "락 클라이밍 산본점", "people_traits": "", "atmosphere": "학습 및 문제 풀이 목적의 실내 화면", "background_details": "모니터 화면에 표시된 금융 및 경제 관련 객관식 문제 페이지", "main_objects": ["모니터 화면", "문제 텍스트", "보기 목록", "마우스 커서"], "photo_category": "MEMO_OBJECT"}, {"id": "IMG_0090.JPG", "file_path": "assets/sample_photos/IMG_0090.JPG", "captured_date": "2026-10-05", "gps_latitude": 37.36421666666667, "gps_longitude": 126.9249638888889, "location_name": "궁내백두한양아파트", "people_traits": "", "atmosphere": "정리되지 않은 실내 옷장 안의 일상적인 분위기", "background_details": "옷장 내부, 다양한 색상의 옷걸이에 걸린 옷들과 흰색 선반, 일부 보이는 기타", "main_objects": ["대한민국 국군 디지털 군복 상의", "옷걸이", "옷들", "기타"], "photo_category": "OTHER"}, {"id": "IMG_0105.JPG", "file_path": "assets/sample_photos/IMG_0105.JPG", "captured_date": "2026-10-05", "gps_latitude": 37.51410555555555, "gps_longitude": 127.11014444444444, "location_name": "우리한돈 방이본관", "people_traits": "한 명의 여성이 연한 분홍색 골지 니트 가디건을 입고 거울이나 스마트폰을 향해 셀피를 찍고 있으며, 편안하고 자연스러운 표정으로 앉아 있음", "atmosphere": "따뜻하고 아늑한 실내 조명, 편안한 저녁 식사 시간대", "background_details": "밝은 베이지색 벽면, 벽에 걸린 푸른빛의 풍경화 액자, 어두운 갈색 원목 테이블과 칸막이", "main_objects": ["스마트폰", "족발 접시", "김치", "부추무침", "밑반찬 그릇", "소스 접시", "나무 테이블"], "photo_category": "PERSON"}, {"id": "IMG_0020.JPG", "file_path": "assets/sample_photos/IMG_0020.JPG", "captured_date": "2026-10-04", "gps_latitude": 35.586688888888894, "gps_longitude": 126.56266944444444, "location_name": "진서면", "people_traits": "3명의 성인이 나란히 서서 정면을 바라보며 미소 짓고 있음. 왼쪽 남성은 파란색 셔츠와 어두운 바지, 가운데 남성은 흰색과 검은색 가로 스트라이프 티셔츠, 오른쪽 여성은 줄무늬 상의와 청바지를 착용함.", "atmosphere": "흐린 날씨의 낮, 야외에서 여유로운 시간을 보내는 차분하고 자연스러운 분위기", "background_details": "철제 난간 너머로 보이는 바다와 회색빛 구름이 가득한 하늘, 시멘트 바닥과 나무 재질의 야외 피크닉 테이블", "main_objects": ["철제 난간", "나무 테이블", "나무 벤치"], "photo_category": "PERSON"}, {"id": "IMG_0049.JPG", "file_path": "assets/sample_photos/IMG_0049.JPG", "captured_date": "2026-10-04", "gps_latitude": 35.374430555555556, "gps_longitude": 126.54256388888889, "location_name": "학원농장길", "people_traits": "", "atmosphere": "화창하거나 구름 낀 낮, 자연스럽고 감성적인 분위기", "background_details": "흐린 하늘과 몽환적인 구름", "main_objects": ["해바라기", "꽃봉오리", "줄기", "하늘", "구름"], "photo_category": "SCENERY"}, {"id": "IMG_0063.JPG", "file_path": "assets/sample_photos/IMG_0063.JPG", "captured_date": "2026-10-04", "gps_latitude": 35.374425, "gps_longitude": 126.5425861111111, "location_name": "학원농장길", "people_traits": "", "atmosphere": "화창한 여름 낮, 자연스럽고 생기 넘치는 분위기", "background_details": "초록색 잎들과 흙바닥, 맑은 하늘", "main_objects": ["해바라기", "해바라기 잎", "해바라기 꽃"], "photo_category": "SCENERY"}, {"id": "IMG_0078.JPG", "file_path": "assets/sample_photos/IMG_0078.JPG", "captured_date": "2026-10-04", "gps_latitude": 35.50320555555555, "gps_longitude": 126.58692222222221, "location_name": "중촌길", "people_traits": "펼쳐진 손바닥 위에 도토리를 올려놓은 손의 모습", "atmosphere": "야외에서 자연물을 관찰하는 밝은 낮", "background_details": "마른 풀과 흙이 있는 야외 바닥", "main_objects": ["도토리", "손바닥"], "photo_category": "OTHER"}, {"id": "IMG_0093.JPG", "file_path": "assets/sample_photos/IMG_0093.JPG", "captured_date": "2026-10-04", "gps_latitude": 35.50313055555556, "gps_longitude": 126.58647222222221, "location_name": "중촌길", "people_traits": "줄무늬 긴팔 티셔츠를 입은 사람이 일부 포착됨", "atmosphere": "밝고 깔끔한 실내 카페 분위기", "background_details": "흰색 테이블", "main_objects": ["음료", "얼음", "빨대", "컵", "메뉴판"], "photo_category": "FOOD"}, {"id": "IMG_0108.PNG", "file_path": "assets/sample_photos/IMG_0108.PNG", "captured_date": "2026-10-04", "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "야간, 디지털 화면, 알림 확인", "background_details": "어두운 보라색 계열의 모바일 화면 배경", "main_objects": ["모바일 화면", "알림 창", "상태 표시줄", "앱 아이콘"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0023.PNG", "file_path": "assets/sample_photos/IMG_0023.PNG", "captured_date": "2026-10-03", "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "디지털 화면, 정보성 콘텐츠, SNS 피드", "background_details": "어두운 회색 배경의 모바일 화면", "main_objects": ["모바일 화면", "텍스트"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0035.PNG", "file_path": "assets/sample_photos/IMG_0035.PNG", "captured_date": "2026-10-03", "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "남성 1명, 회색 긴팔 셔츠와 검정색 바지를 입고 벨트를 착용함, 손을 주머니에 넣고 서 있는 자세", "atmosphere": "모바일 쇼핑몰 웹페이지 화면 캡처", "background_details": "흰색 배경", "main_objects": ["스마트폰 화면", "웹페이지", "쇼핑몰 상품 이미지", "메뉴바", "알림바"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0037.PNG", "file_path": "assets/sample_photos/IMG_0037.PNG", "captured_date": "2026-10-02", "gps_latitude": null, "gps_longitude": null, "location_name": "월드타워 영화관", "people_traits": "", "atmosphere": "디지털 화면, 영화 예매 상황", "background_details": "검은색 배경의 모바일 영화 예매 앱 UI", "main_objects": ["영화 예매 화면", "좌석 배치도", "스마트폰 상태바"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0051.JPG", "file_path": "assets/sample_photos/IMG_0051.JPG", "captured_date": "2026-10-01", "gps_latitude": 37.57808611111111, "gps_longitude": 126.97231944444445, "location_name": "화암주차장", "people_traits": "어두운 계열의 셔츠를 입은 성인 남성 한 명이 상반신만 살짝 걸쳐 있으며, 식사를 준비하는 모습", "atmosphere": "정갈하고 깔끔한 중식당 내부의 따뜻하고 차분한 실내 조명", "background_details": "어두운 원목 테이블 위, 중식당 특유의 전통적인 문양이 새겨진 청화백자 식기류, 앞접시, 찻주전자, 수저세트", "main_objects": ["청화백자 찻주전자", "접시", "찻잔", "국자와 집게 스탠드", "수저 세트", "밑반찬 종지"], "photo_category": "FOOD"}, {"id": "IMG_0065.JPG", "file_path": "assets/sample_photos/IMG_0065.JPG", "captured_date": "2026-10-01", "gps_latitude": 37.578094444444446, "gps_longitude": 126.97234444444445, "location_name": "화암주차장", "people_traits": "남성 한 명이 남색 긴팔 셔츠를 입고 스마트폰을 들고 미소를 지으며 앉아 있음, 배경에 다른 남성 손님이 앉아 있음", "atmosphere": "따뜻하고 아늑한 실내 조명, 저녁 식사 시간대", "background_details": "어두운 원목 테이블과 전통 중식풍의 나무 파티션, 흰색 벽, 청화백자풍의 도자기 찻주전자와 컵", "main_objects": ["스마트폰", "중식 요리 접시", "찻주전자", "찻잔", "가위", "숟가락", "앞접시"], "photo_category": "PERSON"}, {"id": "IMG_0080.JPG", "file_path": "assets/sample_photos/IMG_0080.JPG", "captured_date": "2026-10-01", "gps_latitude": 37.57805555555556, "gps_longitude": 126.97241111111111, "location_name": "화암주차장", "people_traits": "", "atmosphere": "따뜻하고 아늑한 실내 식사 분위기, 저녁 시간대", "background_details": "원목 테이블, 식탁 위 냅킨과 메뉴판, 파란색 무늬가 있는 접시", "main_objects": ["동파육", "청경채", "마늘", "음식 접시", "숟가락"], "photo_category": "FOOD"}, {"id": "IMG_0095.PNG", "file_path": "assets/sample_photos/IMG_0095.PNG", "captured_date": "2026-09-30", "gps_latitude": null, "gps_longitude": null, "location_name": "중앙공원", "people_traits": "", "atmosphere": "야간, 운동 기록 확인, IT 기기 인터페이스 화면", "background_details": "어두운 다크 모드 UI 배경, 녹색 지도 인터페이스와 노란색 달리기 경로 선", "main_objects": ["스마트폰 화면 캡처", "야외 달리기 기록", "지도", "운동 통계 패널"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0010.PNG", "file_path": "assets/sample_photos/IMG_0010.PNG", "captured_date": "2026-09-25", "gps_latitude": null, "gps_longitude": null, "location_name": "도량", "people_traits": "", "atmosphere": "디지털 화면, 정보성, 실내", "background_details": "스마트폰 화면, 흰색 배경, 검은색 텍스트, 하단 주황색 예약 버튼", "main_objects": ["모바일 화면", "예약 안내 텍스트", "주황색 버튼"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0025.JPG", "file_path": "assets/sample_photos/IMG_0025.JPG", "captured_date": "2026-09-24", "gps_latitude": 36.69248888888889, "gps_longitude": 127.15556388888889, "location_name": "세종로", "people_traits": "", "atmosphere": "실내 조명이 비치는 다소 익살스럽고 경고성 문구가 적힌 공간", "background_details": "밝은 갈색 나뭇결 무늬의 문과 하얀색 안내문", "main_objects": ["안내문", "경고문", "문", "손잡이"], "photo_category": "MEMO_OBJECT"}, {"id": "IMG_0039.PNG", "file_path": "assets/sample_photos/IMG_0039.PNG", "captured_date": "2026-09-22", "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "일상적인 디지털 화면, 저녁 시간대", "background_details": "보라색 배경의 모바일 메신저 대화 화면", "main_objects": ["스마트폰 화면", "메신저 대화창", "프로필 사진", "대화 말풍선"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0053.JPG", "file_path": "assets/sample_photos/IMG_0053.JPG", "captured_date": "2026-09-18", "gps_latitude": 37.55766944444444, "gps_longitude": 126.93681388888889, "location_name": "바플라이 3호점 : 단밤", "people_traits": "한 명의 남성이 회색 반팔 니트를 입고 숟가락으로 디저트를 떠먹으며 아래를 바라보고 있음", "atmosphere": "밝은 실내 조명, 일상적이고 편안한 분위기", "background_details": "원목 테이블, 종이 포장지가 깔려 있는 트레이, 다른 사람들의 실루엣이 보이는 실내", "main_objects": ["숟가락", "검은색 그릇", "디저트", "쟁반"], "photo_category": "PERSON"}, {"id": "IMG_0067.JPG", "file_path": "assets/sample_photos/IMG_0067.JPG", "captured_date": "2026-09-18", "gps_latitude": 37.54968888888889, "gps_longitude": 126.94210000000001, "location_name": "헤어 스테이션", "people_traits": "세 명의 남성이 캐주얼한 반팔 및 긴팔 셔츠 차림으로 카메라를 향해 브이 포즈를 취하며 밝은 미소를 짓고 있습니다.", "atmosphere": "밝고 활기찬 실내 낮 시간대", "background_details": "흰색 책상과 모니터, 격자 무늬의 흰색 천장, 큰 창문이 있는 밝은 실내 사무실 공간", "main_objects": ["노트북", "모니터", "책상", "케이블"], "photo_category": "PERSON"}, {"id": "IMG_0082.JPG", "file_path": "assets/sample_photos/IMG_0082.JPG", "captured_date": "2026-09-15", "gps_latitude": 0.0, "gps_longitude": 0.0, "location_name": null, "people_traits": "네 명의 남성이 카메라를 향해 밝게 웃으며 브이 포즈를 취하고 있고, 캐주얼한 흰색 티셔츠와 모자, 안경을 착용하고 있음", "atmosphere": "활기차고 즐거운 야간 분위기, 밤거리", "background_details": "어두운 밤거리, 상점 간판과 가로등 불빛이 비치며 벽돌 외벽과 전선이 보이는 골목길", "main_objects": ["안경", "모자", "의류", "가방"], "photo_category": "PERSON"}, {"id": "IMG_0097.JPG", "file_path": "assets/sample_photos/IMG_0097.JPG", "captured_date": "2026-09-09", "gps_latitude": 37.53825277777778, "gps_longitude": 126.97917222222222, "location_name": "1st Corps Boulevard", "people_traits": "", "atmosphere": "밝고 깔끔한 지하철 내부 환경", "background_details": "흰색 벽면과 지하철 내부의 구조물, 유리창 너머로 보이는 파란색 기둥과 역 시설", "main_objects": ["안내 디스플레이", "서울교통공사 로고"], "photo_category": "MEMO_OBJECT"}, {"id": "IMG_0012.JPG", "file_path": "assets/sample_photos/IMG_0012.JPG", "captured_date": "2026-09-07", "gps_latitude": 37.55089444444444, "gps_longitude": 126.94348055555555, "location_name": "35", "people_traits": "손으로 과자 봉지를 들고 있는 모습", "atmosphere": "야외 주간, 일상적인 순간", "background_details": "회색 보도블록 바닥", "main_objects": ["포켓몬 과자 봉지", "포켓몬스터 스낵 패키지"], "photo_category": "OTHER"}, {"id": "IMG_0027.JPG", "file_path": "assets/sample_photos/IMG_0027.JPG", "captured_date": "2026-09-07", "gps_latitude": 37.550463888888885, "gps_longitude": 126.93896388888889, "location_name": "35", "people_traits": "", "atmosphere": "캐주얼하고 깔끔한 실내 식사 시간", "background_details": "검은색 식판과 밝은 연출된 식탁", "main_objects": ["스팸마요덮밥", "국그릇", "숟가락", "젓가락", "식판"], "photo_category": "FOOD"}, {"id": "IMG_0055.JPG", "file_path": "assets/sample_photos/IMG_0055.JPG", "captured_date": "2026-09-01", "gps_latitude": null, "gps_longitude": null, "location_name": "서강대학교", "people_traits": "", "atmosphere": "밝은 실내", "background_details": "초록색 배경 벽", "main_objects": ["포스터", "안내문", "QR코드", "일러스트"], "photo_category": "MEMO_OBJECT"}, {"id": "IMG_0070.JPG", "file_path": "assets/sample_photos/IMG_0070.JPG", "captured_date": "2026-08-28", "gps_latitude": 0.0, "gps_longitude": 0.0, "location_name": null, "people_traits": "", "atmosphere": "밝은 실내 조명, 깔끔한 디저트 카페 분위기", "background_details": "검은색 테이블, 은색 원형 트레이", "main_objects": ["타르트", "페이스트리", "레몬 타르트", "블루베리 타르트", "에그타르트", "포크", "나이프"], "photo_category": "FOOD"}, {"id": "IMG_0085.JPG", "file_path": "assets/sample_photos/IMG_0085.JPG", "captured_date": "2026-08-26", "gps_latitude": 35.11654722222222, "gps_longitude": 129.04174722222223, "location_name": "7-9", "people_traits": "", "atmosphere": "정갈한 식당 실내에서 촬영된 점심 또는 저녁 식사 시간", "background_details": "갈색 원목 테이블 위에 올려진 나무 식판", "main_objects": ["메밀소바", "김밥", "유부초밥", "튀김", "양배추샐러드", "김치", "디저트 요거트", "와사비"], "photo_category": "FOOD"}, {"id": "IMG_0030.JPG", "file_path": "assets/sample_photos/IMG_0030.JPG", "captured_date": "2026-08-24", "gps_latitude": 35.17952777777778, "gps_longitude": 129.1987611111111, "location_name": "송정동", "people_traits": "남성 1명, 카키색 계열의 위장 무늬(밀리터리 패턴) 반팔 티셔츠와 반바지 차림, 거울을 보며 스마트폰으로 전신 셀피를 찍고 있음", "atmosphere": "밝고 깔끔한 실내 조명, 편안한 일상", "background_details": "흰색 타일 바닥과 밝은 그레이 톤의 벽, 전신 거울에 비친 실내 공간, 우측 상단과 하단에 가방 및 소품들이 놓여 있음", "main_objects": ["전신 거울", "스마트폰", "가방", "소품"], "photo_category": "PERSON"}, {"id": "IMG_0044.JPG", "file_path": "assets/sample_photos/IMG_0044.JPG", "captured_date": "2026-08-23", "gps_latitude": 35.17952777777778, "gps_longitude": 129.19874444444446, "location_name": "송정동", "people_traits": "검은색 반팔 티셔츠를 입은 1명이 의자에 앉아 있음", "atmosphere": "따뜻하고 아늑한 저녁 식사 분위기", "background_details": "밝은 원목 식탁, 하얀 그릇, 스테인리스 와인잔", "main_objects": ["음식", "스테인리스 와인잔", "그릇", "막걸리 병", "젓가락"], "photo_category": "FOOD"}, {"id": "IMG_0058.JPG", "file_path": "assets/sample_photos/IMG_0058.JPG", "captured_date": "2026-08-23", "gps_latitude": 35.11715, "gps_longitude": 129.04095555555554, "location_name": "한국토지주택공사 부산울산지역본부", "people_traits": "", "atmosphere": "밝고 깔끔한 실내 조명", "background_details": "편의점 음료 진열대, 회색 철제 선반, 파란색 'ZERO' 광고판", "main_objects": ["탄산음료 캔", "탐스제로", "몬스터에너지", "가격표"], "photo_category": "OTHER"}, {"id": "IMG_0073.JPG", "file_path": "assets/sample_photos/IMG_0073.JPG", "captured_date": "2026-08-23", "gps_latitude": 37.364197222222224, "gps_longitude": 126.9249638888889, "location_name": "궁내백두한양아파트", "people_traits": "", "atmosphere": "평화롭고 고요한 실내 분위기", "background_details": "밝은 실내 수조 내부, 투명한 유리 벽", "main_objects": ["어항", "물고기", "수초", "여과기"], "photo_category": "OTHER"}, {"id": "IMG_0088.JPG", "file_path": "assets/sample_photos/IMG_0088.JPG", "captured_date": "2026-08-18", "gps_latitude": 37.36416944444444, "gps_longitude": 126.92493611111112, "location_name": "궁내백두한양아파트", "people_traits": "", "atmosphere": "평화로운 실내 어항 풍경, 밝은 조명", "background_details": "어항 내부의 투명한 물과 흰색 배경", "main_objects": ["구피", "여과기", "물풀"], "photo_category": "OTHER"}, {"id": "IMG_0018.JPG", "file_path": "assets/sample_photos/IMG_0018.JPG", "captured_date": "2026-08-15", "gps_latitude": 37.36416666666667, "gps_longitude": 126.92492777777778, "location_name": "궁내백두한양아파트", "people_traits": "", "atmosphere": "차분하고 정적인 실내 환경", "background_details": "밝고 깨끗한 실내 어항 내부", "main_objects": ["어항", "물고기", "수초", "조개껍데기", "소일 바닥재"], "photo_category": "OTHER"}, {"id": "IMG_0103.PNG", "file_path": "assets/sample_photos/IMG_0103.PNG", "captured_date": "2026-08-15", "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "디지털 게임 플레이 화면, 가상의 판타지 듀얼 아레나", "background_details": "석판 형태의 듀얼 필드와 카드 게임 인터페이스, 디지털 UI 화면", "main_objects": ["카드 게임", "몬스터 카드", "듀얼 필드", "UI 버튼", "라이프 포인트 점수판"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0033.JPG", "file_path": "assets/sample_photos/IMG_0033.JPG", "captured_date": "2026-08-13", "gps_latitude": 37.364161111111116, "gps_longitude": 126.92491944444446, "location_name": "궁내백두한양아파트", "people_traits": "", "atmosphere": "밝고 깔끔한 실내 조명", "background_details": "흰색 다이아몬드 패턴이 있는 패브릭 매트 위", "main_objects": ["보드게임 상자", "해저탐험", "ESPER", "일본어 카드게임", "UNO 별의 커비 카드게임"], "photo_category": "OTHER"}, {"id": "IMG_0013.JPG", "file_path": "assets/sample_photos/IMG_0013.JPG", "captured_date": "2026-08-12", "gps_latitude": 35.71748055555556, "gps_longitude": 139.71733055555555, "location_name": "BeGood 雑司ヶ谷駅前", "people_traits": "", "atmosphere": "정돈되어 있고 현대적인 분위기의 실내 공간", "background_details": "어두운 회색 톤의 바닥재와 흰색 벽면, 매립형 조명이 설치된 실내 공간", "main_objects": ["싱크대", "조리대", "수납장", "청소도구"], "photo_category": "SCENERY"}, {"id": "IMG_0028.JPG", "file_path": "assets/sample_photos/IMG_0028.JPG", "captured_date": "2026-08-12", "gps_latitude": 35.717983333333336, "gps_longitude": 139.71699444444445, "location_name": "雑司が谷二丁目", "people_traits": "1명, 빨간색과 흰색이 섞인 줄무늬 반팔 상의를 입고 위에서 아래로 내려다보는 구도로 셀카를 찍고 있음", "atmosphere": "화창한 낮, 도심 속 한적한 주택가 골목", "background_details": "아스팔트 골목길, 흰색 차선, 일본식 주택 및 건물들, 전봇대와 전깃줄", "main_objects": ["줄무늬 상의", "아스팔트 도로", "건물"], "photo_category": "PERSON"}, {"id": "IMG_0068.JPG", "file_path": "assets/sample_photos/IMG_0068.JPG", "captured_date": "2026-08-12", "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "어두운 밤, 차분하고 신비로운 분위기", "background_details": "비행기 창문 너머로 내려다보이는 어두운 밤하늘과 도시의 불빛, 흰색 날개 구조물", "main_objects": ["도시 야경", "비행기 날개", "창문"], "photo_category": "SCENERY"}, {"id": "IMG_0083.JPG", "file_path": "assets/sample_photos/IMG_0083.JPG", "captured_date": "2026-08-12", "gps_latitude": 35.77885555555555, "gps_longitude": 140.3875111111111, "location_name": "나리타국제공항", "people_traits": "", "atmosphere": "이른 아침 또는 해 질 녘의 흐린 날씨, 차분하면서도 설레는 출국 분위기", "background_details": "비행기 활주로, 밝게 빛나는 가로등, 푸른 어스름이 깔린 하늘, 여러 대의 비행기와 지상 조업 장비", "main_objects": ["비행기 날개", "제주항공 꼬리날개", "가로등", "활주로"], "photo_category": "SCENERY"}, {"id": "IMG_0098.PNG", "file_path": "assets/sample_photos/IMG_0098.PNG", "captured_date": "2026-08-12", "gps_latitude": null, "gps_longitude": null, "location_name": "JR 하라주쿠역 / 하마마츠초역", "people_traits": "", "atmosphere": "디지털 화면, 뉴스 기사 열람 중인 분위기", "background_details": "일본 야후 뉴스 웹페이지 화면, 모바일 브라우저 UI, 기사 본문과 열차 사진", "main_objects": ["모바일 화면 캡처", "철도 기사", "열차 사진", "뉴스 웹페이지"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0042.JPG", "file_path": "assets/sample_photos/IMG_0042.JPG", "captured_date": "2026-08-11", "gps_latitude": 35.729886111111114, "gps_longitude": 139.71775833333334, "location_name": "補助第174号線", "people_traits": "", "atmosphere": "따뜻하고 밝은 실내 조명, 식사 시간대", "background_details": "원목 테이블 위, 종이컵 및 소스 그릇이 놓인 실내", "main_objects": ["수제버거", "감자튀김", "머스타드 소스", "종이 컵", "포장 종이"], "photo_category": "FOOD"}, {"id": "IMG_0056.JPG", "file_path": "assets/sample_photos/IMG_0056.JPG", "captured_date": "2026-08-11", "gps_latitude": 35.66022777777778, "gps_longitude": 139.69969166666667, "location_name": "Okura", "people_traits": "많은 사람들이 다양한 캐주얼 복장을 입고 거리를 걷고 있는 모습", "atmosphere": "활기차고 번잡한 도심의 저녁 또는 흐린 날씨", "background_details": "일본 도심의 번화가 거리, 다양한 일본어 간판, 붉은색과 흰색 네온사인, 현대식 빌딩들", "main_objects": ["간판", "네온사인", "빌딩", "가로등", "사람들"], "photo_category": "SCENERY"}, {"id": "IMG_0071.JPG", "file_path": "assets/sample_photos/IMG_0071.JPG", "captured_date": "2026-08-10", "gps_latitude": 35.66896111111111, "gps_longitude": 139.7058111111111, "location_name": "明治通り", "people_traits": "손으로 음료 컵을 들고 있는 모습", "atmosphere": "캐주얼하고 일상적인 분위기의 야외 낮", "background_details": "어두운 색상의 아스팔트 바닥", "main_objects": ["테이크아웃 컵", "빨대", "음료"], "photo_category": "FOOD"}, {"id": "IMG_0086.JPG", "file_path": "assets/sample_photos/IMG_0086.JPG", "captured_date": "2026-08-10", "gps_latitude": 35.66894722222222, "gps_longitude": 139.7058111111111, "location_name": "明治通り", "people_traits": "손으로 부리또를 들고 있는 모습", "atmosphere": "캐주얼한 식사 시간, 밝은 실내", "background_details": "갈색 원목 무늬 테이블과 어두운 색상의 트레이", "main_objects": ["부리또", "소스", "트레이", "테이블"], "photo_category": "FOOD"}, {"id": "IMG_0016.JPG", "file_path": "assets/sample_photos/IMG_0016.JPG", "captured_date": "2026-08-08", "gps_latitude": 35.73054444444445, "gps_longitude": 139.71609444444442, "location_name": "東池袋一丁目", "people_traits": "다섯 명의 남성, 캐주얼한 반팔 티셔츠와 셔츠 착용, 밝은 표정으로 브이 포즈를 하거나 마이크를 들고 노래하는 자세", "atmosphere": "활기차고 즐거운 실내 노래방 분위기", "background_details": "유럽풍의 클래식한 문양이 있는 흰색 벽지와 붉은 벽, 하얀색 탁자, 나무 옷걸이", "main_objects": ["마이크", "태블릿", "음료수병", "물컵", "테이블", "옷걸이"], "photo_category": "PERSON"}, {"id": "IMG_0101.JPG", "file_path": "assets/sample_photos/IMG_0101.JPG", "captured_date": "2026-08-08", "gps_latitude": 35.727219444444444, "gps_longitude": 139.711975, "location_name": "明治通", "people_traits": "", "atmosphere": "어두운 밤, 비가 온 뒤 젖은 거리의 도심 야경", "background_details": "젖은 아스팔트 도로, 주차장 표지판, 건물 외벽, 초록색 가로수 및 난간", "main_objects": ["자동차", "경광등", "난간", "가로수"], "photo_category": "SCENERY"}, {"id": "IMG_0031.JPG", "file_path": "assets/sample_photos/IMG_0031.JPG", "captured_date": "2026-08-06", "gps_latitude": 35.691630555555555, "gps_longitude": 139.70576388888887, "location_name": "메이지로", "people_traits": "남성 1명이 상반신만 보이며 어두운 반팔 티셔츠를 입고 감튀를 집고 있음", "atmosphere": "따뜻하고 아늑한 실내 식사 분위기", "background_details": "밝은 주황빛의 원목 식탁", "main_objects": ["라면", "에다마메(풋콩)", "튀김", "감자튀김", "그릇", "젓가락"], "photo_category": "FOOD"}, {"id": "IMG_0045.JPG", "file_path": "assets/sample_photos/IMG_0045.JPG", "captured_date": "2026-08-03", "gps_latitude": 35.71749444444445, "gps_longitude": 139.71726944444444, "location_name": "Times", "people_traits": "", "atmosphere": "정돈되지 않은 아늑한 실내, 밝은 실내등 조명", "background_details": "밝은 흰색 벽면과 밝은 갈색 바닥재로 이루어진 원룸 실내", "main_objects": ["침대", "이불", "책상", "의자", "에어컨", "커튼", "냉장고", "천장등"], "photo_category": "SCENERY"}, {"id": "IMG_0059.JPG", "file_path": "assets/sample_photos/IMG_0059.JPG", "captured_date": "2026-08-03", "gps_latitude": 34.73378888888889, "gps_longitude": 135.5002888888889, "location_name": "Sweets PATIO", "people_traits": "", "atmosphere": "현대적이고 깔끔한 기차역의 주간 분위기", "background_details": "밝은 회색 벽면과 세로형 창문이 있는 기차역 승강장", "main_objects": ["역명판", "기차역 표지판"], "photo_category": "SCENERY"}, {"id": "IMG_0019.JPG", "file_path": "assets/sample_photos/IMG_0019.JPG", "captured_date": "2026-08-02", "gps_latitude": 34.66580555555555, "gps_longitude": 133.92692499999998, "location_name": "柳川", "people_traits": "", "atmosphere": "흐린 낮, 기차 운전실 내부의 정돈되고 차분한 분위기", "background_details": "금속 프레임으로 둘러싸인 창문 너머로 초록색 풀숲과 도로가 보이며, 실내는 어두운 톤의 철제와 기기들로 구성되어 있음", "main_objects": ["철도 차량 제어기", "모니터", "마이크", "IC 카드 단말기", "창문"], "photo_category": "SCENERY"}, {"id": "IMG_0034.JPG", "file_path": "assets/sample_photos/IMG_0034.JPG", "captured_date": "2026-08-02", "gps_latitude": 34.60174444444445, "gps_longitude": 133.7665861111111, "location_name": "阿知一丁目", "people_traits": "", "atmosphere": "화창한 낮, 맑고 깨끗한 도시 풍경", "background_details": "밝은 파란색 하늘과 흰색 타일 벽면, 아치형의 큰 유리창들", "main_objects": ["건물 외관", "유리창", "간판"], "photo_category": "SCENERY"}, {"id": "IMG_0074.JPG", "file_path": "assets/sample_photos/IMG_0074.JPG", "captured_date": "2026-08-02", "gps_latitude": 34.663333333333334, "gps_longitude": 133.92211944444443, "location_name": "西川緑道公園筋", "people_traits": "", "atmosphere": "편안하고 아늑한 실내 저녁 시간", "background_details": "어두운 갈색 가죽 표면 위, 배경으로 어두운 바닥과 흰색 통이 흐리게 보임", "main_objects": ["소금 & 리치 제로 사워 캔음료", "롤케이크 또는 디저트 (플라스틱 용기 포함)"], "photo_category": "FOOD"}, {"id": "IMG_0089.JPG", "file_path": "assets/sample_photos/IMG_0089.JPG", "captured_date": "2026-08-02", "gps_latitude": 34.66500277777778, "gps_longitude": 133.91795277777777, "location_name": "マクドナルド", "people_traits": "", "atmosphere": "밝은 실내 조명, 패스트푸드 매장 내부", "background_details": "초록색 트레이가 놓인 밝은 갈색 원목 무늬 테이블 위", "main_objects": ["햄버거", "감자튀김", "음료 컵", "영수증", "쟁반"], "photo_category": "FOOD"}, {"id": "IMG_0104.JPG", "file_path": "assets/sample_photos/IMG_0104.JPG", "captured_date": "2026-08-02", "gps_latitude": 34.66757777777777, "gps_longitude": 133.93557777777778, "location_name": "月見橋", "people_traits": "1명, 빨간색과 흰색이 섞인 축구 유니폼 상의를 입고 카메라를 정면으로 응시하며 서 있는 자세", "atmosphere": "선선하고 어두운 밤, 조명이 비치는 야외 호수 주변", "background_details": "초록색 잔디, 호수 또는 강에 비친 녹색과 파란색 조명, 어두운 밤의 수변 산책로", "main_objects": ["유니폼", "조명", "호수"], "photo_category": "PERSON"}, {"id": "IMG_0022.JPG", "file_path": "assets/sample_photos/IMG_0022.JPG", "captured_date": "2026-08-01", "gps_latitude": 34.39291388888889, "gps_longitude": 133.10556111111111, "location_name": "糸崎四丁目", "people_traits": "", "atmosphere": "맑고 화창한 낮, 평화로운 일본 지방 여행 분위기", "background_details": "일본의 소도시 풍경, 철길 승강장, 전봇대, 주택가, 울창한 초록색 산", "main_objects": ["전봇대", "역명판", "철길", "울타리", "자동차"], "photo_category": "SCENERY"}, {"id": "IMG_0036.JPG", "file_path": "assets/sample_photos/IMG_0036.JPG", "captured_date": "2026-08-01", "gps_latitude": 34.43174444444444, "gps_longitude": 132.74413888888887, "location_name": "西条土与丸一丁目", "people_traits": "", "atmosphere": "화창한 낮, 야외 거리", "background_details": "일본식 전통 기와 지붕 건물, 주차장 표지판, 전봇대와 전깃줄, 철망 울타리, 맑은 하늘", "main_objects": ["전봇대", "주차장 요금 안내판", "철망 울타리", "자동차", "일본식 건축물"], "photo_category": "SCENERY"}, {"id": "IMG_0048.JPG", "file_path": "assets/sample_photos/IMG_0048.JPG", "captured_date": "2026-08-01", "gps_latitude": 34.66500833333333, "gps_longitude": 133.9211111111111, "location_name": "オペラ通り", "people_traits": "", "atmosphere": "정갈하고 깔끔한 일식당 분위기, 실내", "background_details": "어두운 원목 식탁", "main_objects": ["회 접시", "회", "와사비", "레몬", "해초", "간장 소스", "깻잎"], "photo_category": "FOOD"}, {"id": "IMG_0062.JPG", "file_path": "assets/sample_photos/IMG_0062.JPG", "captured_date": "2026-08-01", "gps_latitude": 34.66283055555555, "gps_longitude": 133.92294444444443, "location_name": "平和町", "people_traits": "", "atmosphere": "아늑하고 깔끔한 실내, 은은한 조명의 호텔 방", "background_details": "베이지색 벽과 어두운 회색의 포인트 벽, 창문, 갈색 카펫 바닥", "main_objects": ["침대", "텔레비전", "전기포트", "가방", "커튼"], "photo_category": "SCENERY"}, {"id": "IMG_0077.JPG", "file_path": "assets/sample_photos/IMG_0077.JPG", "captured_date": "2026-08-01", "gps_latitude": null, "gps_longitude": null, "location_name": "일본 기차역 또는 철도 차량", "people_traits": "차량 내부 창문 너머로 일부만 보이는 승객 1~2명의 모습", "atmosphere": "도시철도 승강장의 밝고 현대적인 분위기", "background_details": "은색 금속 재질의 기차 외관, 녹색과 흰색이 섞인 전광판 안내문구, 기차 창문과 내부 좌석", "main_objects": ["열차 외관", "전광판", "기차 창문", "환기구"], "photo_category": "SCENERY"}, {"id": "IMG_0092.JPG", "file_path": "assets/sample_photos/IMG_0092.JPG", "captured_date": "2026-08-01", "gps_latitude": 34.490569444444446, "gps_longitude": 133.36120555555556, "location_name": "Motomachi", "people_traits": "남성 1명, 빨간색 반팔 축구 유니폼 상의, 회색 반바지, 검은색 양말과 신발을 착용하고 카메라를 보며 서 있음", "atmosphere": "화창한 낮, 관광지의 활기차고 맑은 분위기", "background_details": "거대한 흰색 전통 일본식 성 건물, 돌담, 모래 광장, 푸른 하늘과 흰 구름", "main_objects": ["일본 성", "돌담", "광장", "축구 유니폼"], "photo_category": "PERSON"}, {"id": "IMG_0107.JPG", "file_path": "assets/sample_photos/IMG_0107.JPG", "captured_date": "2026-08-01", "gps_latitude": 34.41063888888889, "gps_longitude": 133.19763055555555, "location_name": "猫の細道", "people_traits": "남성 1명, 아스날 축구 유니폼 상의 착용, 카메라 스트랩을 메고 있음, 무표정한 표정으로 위를 향해 서 있거나 누워있는 자세", "atmosphere": "화창한 낮, 야외", "background_details": "지붕 기와 패턴, 나무, 멀리 보이는 바다와 도시 풍경", "main_objects": ["축구 유니폼", "카메라 스트랩"], "photo_category": "PERSON"}, {"id": "IMG_0050.JPG", "file_path": "assets/sample_photos/IMG_0050.JPG", "captured_date": "2026-07-31", "gps_latitude": 34.39324444444444, "gps_longitude": 132.4669027777778, "location_name": "가나야마초", "people_traits": "", "atmosphere": "편안한 실내, 저녁 시간", "background_details": "원목 질감의 갈색 테이블 위, 어두운 청록색 벽", "main_objects": ["편의점 안주", "돼지귀 요리 플라스틱 용기", "산토리 캔맥주"], "photo_category": "FOOD"}, {"id": "IMG_0064.JPG", "file_path": "assets/sample_photos/IMG_0064.JPG", "captured_date": "2026-07-31", "gps_latitude": 34.24561666666667, "gps_longitude": 132.5672138888889, "location_name": "本通り", "people_traits": "", "atmosphere": "깔끔하고 담백한 식사 분위기, 실내 조명", "background_details": "어두운 원목 테이블", "main_objects": ["중화냉면", "면", "오이채", "차슈", "삶은 달걀", "새우", "젓가락", "흰색 접시", "물컵"], "photo_category": "FOOD"}, {"id": "IMG_0066.JPG", "file_path": "assets/sample_photos/IMG_0066.JPG", "captured_date": "2026-07-01", "gps_latitude": 37.77484166666667, "gps_longitude": 128.9450527777778, "location_name": "창해로", "people_traits": "1명, 버건디색 스웨터와 어깨에 걸친 흰색 니트, 어두운 바지를 착용하고 카메라를 보며 서 있는 모습", "atmosphere": "흐린 날씨의 차분하고 쓸쓸한 분위기, 낮", "background_details": "흐린 하늘, 잔잔한 파도가 치는 바다, 모래사장", "main_objects": ["인물", "모래사장", "바다", "카메라"], "photo_category": "PERSON"}, {"id": "IMG_0081.JPG", "file_path": "assets/sample_photos/IMG_0081.JPG", "captured_date": "2026-07-01", "gps_latitude": 37.774630555555554, "gps_longitude": 128.94529722222222, "location_name": "창해로", "people_traits": "한 명의 남성이 버건디색 맨투맨, 어깨에 걸친 아이보리색 니트 가디건을 입고 카메라와 가방을 든 채 카메라를 응시하며 서 있음", "atmosphere": "흐린 날씨, 쌀쌀한 바닷가 분위기", "background_details": "흐린 하늘, 모래사장, 바다 파도", "main_objects": ["카메라", "가방", "조개껍질", "맨투맨", "니트"], "photo_category": "PERSON"}, {"id": "IMG_0061.JPG", "file_path": "assets/sample_photos/IMG_0061.JPG", "captured_date": "2026-02-26", "gps_latitude": null, "gps_longitude": null, "location_name": "목장", "people_traits": "한 명의 남성이 쪼그리고 앉아 두 손으로 카메라를 들고 양을 촬영하고 있으며, 갈색과 흰색이 섞인 패턴의 니트 스웨터와 베이지색 바지를 착용하고 있음", "atmosphere": "화창한 낮, 동물과 교감하는 평화롭고 자연스러운 분위기", "background_details": "갈색 목재 울타리와 흙바닥으로 이루어진 야외 동물원 또는 목장 배경, 멀리 다른 양이 서 있음", "main_objects": ["남성", "카메라", "양", "목재 울타리"], "photo_category": "PERSON"}, {"id": "IMG_0006.JPG", "file_path": "assets/sample_photos/IMG_0006.JPG", "captured_date": "2018-03-30", "gps_latitude": 37.76007777777778, "gps_longitude": -122.50956666666667, "location_name": "Lower Great Highway Trail", "people_traits": "", "atmosphere": "화창하고 생기 넘치는 봄 또는 여름 낮", "background_details": "초록색 잎들과 화려한 마젠타 분홍색, 노란색, 보라색 꽃들이 가득한 풍경", "main_objects": ["마젠타 분홍색 꽃", "노란색 꽃", "보라색 꽃", "초록색 잎"], "photo_category": "SCENERY"}, {"id": "IMG_0003.JPG", "file_path": "assets/sample_photos/IMG_0003.JPG", "captured_date": "2012-08-08", "gps_latitude": 65.68289444444444, "gps_longitude": -17.54892777777778, "location_name": "Goðafossvegur", "people_traits": "", "atmosphere": "화창한 날씨, 웅장하고 신비로운 자연 풍경, 낮", "background_details": "거친 암벽, 이끼 낀 바위, 흐르는 물, 맑은 하늘과 강한 햇살", "main_objects": ["폭포", "암벽", "이끼", "식물", "강물"], "photo_category": "SCENERY"}, {"id": "IMG_0004.JPG", "file_path": "assets/sample_photos/IMG_0004.JPG", "captured_date": "2012-08-08", "gps_latitude": 64.75289444444445, "gps_longitude": -14.538611111111111, "location_name": "Múlaþing", "people_traits": "", "atmosphere": "청량하고 고요한 자연 풍경, 맑은 낮", "background_details": "초록색 이끼가 낀 검은 바위와 하얗게 흐르는 물살이 대비되는 자연 배경", "main_objects": ["폭포", "이끼", "바위"], "photo_category": "SCENERY"}, {"id": "IMG_0005.JPG", "file_path": "assets/sample_photos/IMG_0005.JPG", "captured_date": "2012-08-08", "gps_latitude": 63.5314, "gps_longitude": -19.5112, "location_name": "Skógafoss Viewpoint", "people_traits": "", "atmosphere": "웅장하고 신비로운 자연, 흐린 날씨, 서늘한 계절감", "background_details": "초록색 이끼와 풀로 덮인 절벽, 거대한 폭포, 자취를 감춘 물줄기가 만드는 안개와 연무, 흐리고 보랏빛 감도는 하늘", "main_objects": ["폭포", "절벽", "이끼", "풀"], "photo_category": "SCENERY"}, {"id": "IMG_0001.JPG", "file_path": "assets/sample_photos/IMG_0001.JPG", "captured_date": "2011-03-12", "gps_latitude": 38.03744444444444, "gps_longitude": -122.80317777777778, "location_name": "Woodpecker Trail", "people_traits": "", "atmosphere": "화창하고 평온한 낮, 바닷가 근처의 자연스러운 분위기", "background_details": "모래사장과 초록색 풀, 흐린 하늘이 어우러진 해안가 풍경", "main_objects": ["노란색 들꽃", "다육식물", "풀잎", "모래사장"], "photo_category": "SCENERY"}, {"id": "IMG_0002.JPG", "file_path": "assets/sample_photos/IMG_0002.JPG", "captured_date": "2009-10-09", "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "햇살이 비치는 화창한 낮, 싱그러운 계절", "background_details": "초록색 나뭇잎이 우거진 나무와 자연 배경", "main_objects": ["노랗게 물든 나뭇잎", "초록색 나뭇잎", "나뭇가지"], "photo_category": "SCENERY"}, {"id": "IMG_0007.PNG", "file_path": "assets/sample_photos/IMG_0007.PNG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "깔끔하고 현대적인 모바일 애플리케이션 실행 화면", "background_details": "연한 분홍색 그라데이션 배경", "main_objects": ["모바일 앱 UI", "상단바", "앱 로고", "국가 선택 버튼", "확인 버튼"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0008.JPG", "file_path": "assets/sample_photos/IMG_0008.JPG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "캐주얼하고 아기자기한 일러스트풍의 실내 식당 메뉴판 기록", "background_details": "흰색 종이에 손글씨로 적힌 일러스트레이터 음식 메뉴판", "main_objects": ["메뉴판", "일러스트", "음식 가격표", "손글씨"], "photo_category": "MEMO_OBJECT"}, {"id": "IMG_0015.JPG", "file_path": "assets/sample_photos/IMG_0015.JPG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "6명의 젊은 남성들이 모여 있으며, 검은색 티셔츠, 카모플라주 패턴 상의, 회색 반팔 티셔츠 등을 입고 다양한 표정과 자세로 카메라를 응시하고 있습니다.", "atmosphere": "활기차고 즐거운 분위기의 실내 모임, 야간", "background_details": "노란색 기둥과 하얀 벽이 있는 실내 공간이며, 창밖은 어두운 야경이 보입니다.", "main_objects": ["음식", "상추", "종이컵", "페트병", "접시"], "photo_category": "PERSON"}, {"id": "IMG_0017.JPG", "file_path": "assets/sample_photos/IMG_0017.JPG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "유쾌하고 장난스러운 대화 분위기", "background_details": "연한 하늘색 배경의 모바일 메신저 대화창 화면", "main_objects": ["말풍선", "이모티콘", "합성 짤", "프로필 사진"], "photo_category": "SCREENSHOT"}, {"id": "IMG_0021.JPG", "file_path": "assets/sample_photos/IMG_0021.JPG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": "시부야 (Shibuya, Tokyo)", "people_traits": "남성 1명, 빨간색 축구 유니폼 상의와 연청색 데님 반바지 차림, 팔짱을 낀 자세로 미소를 짓고 있음", "atmosphere": "초저녁 혹은 해 질 녘, 도시적이고 활기찬 분위기", "background_details": "일본의 도심 거리, 고층 빌딩들, 'ONITSUKA TIGER' 등 대형 광고판과 붉은색 세로 간판, 금속 난간이 있는 육교 위", "main_objects": ["축구 유니폼", "데님 반바지", "크로스백", "대형 광고판", "금속 난간"], "photo_category": "PERSON"}, {"id": "IMG_0024.JPG", "file_path": "assets/sample_photos/IMG_0024.JPG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "실내에서 모니터 화면을 직접 촬영한 디지털 기록 분위기", "background_details": "노트북 또는 모니터의 운영체제 설정 화면, 검은색 창 팝업 메뉴", "main_objects": ["IBus 한글 설정 창", "키보드 설정 메뉴", "모니터 화면"], "photo_category": "MEMO_OBJECT"}, {"id": "IMG_0038.JPG", "file_path": "assets/sample_photos/IMG_0038.JPG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "어두운 실내, 모니터 화면 촬영", "background_details": "검은색 모니터 화면, 와이파이 연결 설정 창, 배경에 노란색 별무늬 그래픽", "main_objects": ["모니터", "와이파이 설정 창", "마우스 커서"], "photo_category": "MEMO_OBJECT"}, {"id": "IMG_0041.JPG", "file_path": "assets/sample_photos/IMG_0041.JPG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "어두운 분위기, 과학적이고 디지털적인 느낌", "background_details": "검은색 배경", "main_objects": ["뇌", "사람", "빛", "신경망"], "photo_category": "MEMO_OBJECT"}, {"id": "IMG_0047.JPG", "file_path": "assets/sample_photos/IMG_0047.JPG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": "일본식 이자카야", "people_traits": "남성 3명, 왼쪽 인물은 어두운 반팔 티셔츠를 입고 엄지를 들고 있으며, 가운데 인물은 빨간색 반팔 티셔츠를 입고 머리에 토끼 귀 모양의 종이 장식을 쓰고 브이 포즈를 취하고 있고, 오른쪽 인물은 어두운 셔츠를 입고 V 포즈를 취함", "atmosphere": "활기차고 즐거운 분위기의 실내 저녁 술자리", "background_details": "원목 테이블, 천장에 매달린 다양한 디자인의 일본식 종이등(초이스탄), 목재 칸막이가 있는 실내 공간", "main_objects": ["맥주 잔", "에다마메(풋콩)", "치킨 가라아게", "하이볼", "토끼 종이 모자"], "photo_category": "PERSON"}, {"id": "IMG_0076.JPG", "file_path": "assets/sample_photos/IMG_0076.JPG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "", "atmosphere": "요리를 준비하는 분주하고 깔끔한 실내 주방 분위기", "background_details": "밝은 흰색 주방 조리대와 싱크대 주변, 어두운 냄비 받침대와 주방 가구", "main_objects": ["생고기", "대형 스텐 냄비", "프라이팬", "김치", "키친타월"], "photo_category": "FOOD"}, {"id": "IMG_0091.JPG", "file_path": "assets/sample_photos/IMG_0091.JPG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": null, "people_traits": "여러 명의 인물, 빨간색과 흰색이 섞인 축구 유니폼을 입은 남성이 종이컵으로 음료를 마시고 있음, 배경에 푸른색 후드티를 입은 다른 인물들이 있음", "atmosphere": "어두운 실내에서 조명에 비친 아늑하고 자연스러운 분위기", "background_details": "회색 벽, 원목 테이블, 벽에 걸린 전통 직물 장식", "main_objects": ["축구 유니폼", "종이컵", "소형 조명", "휴대폰", "전통 벽걸이 장식"], "photo_category": "PERSON"}, {"id": "IMG_0100.JPG", "file_path": "assets/sample_photos/IMG_0100.JPG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": "해변", "people_traits": "남성 6명, 반팔 티셔츠와 반바지 차림, 브이 포즈 및 엄지척 포즈", "atmosphere": "어두운 밤, 야외, 친근하고 즐거운 분위기", "background_details": "어두운 밤바다와 모래사장, 멀리 파도가 치는 풍경", "main_objects": ["남성들", "모래사장", "밤바다"], "photo_category": "PERSON"}, {"id": "IMG_0106.JPG", "file_path": "assets/sample_photos/IMG_0106.JPG", "captured_date": null, "gps_latitude": null, "gps_longitude": null, "location_name": "이케부쿠로역 (Ikebukuro Station)", "people_traits": "남성 2명, 캐주얼한 옷차림(반팔 티셔츠, 청바지, 반바지, 스니커즈), 왼쪽 남성은 스마트폰을 보며 무언가를 먹고 있고 오른쪽 남성은 멍하니 앞을 바라보고 있음", "atmosphere": "일상적인 지하철 안, 밝은 인공 조명, 차분하고 평온한 분위기", "background_details": "지하철 내부, 빨간색 쿠션 좌석, 손잡이 봉, 유리창 너머 역 플랫폼(Ikebukuro F09 표시), 벽에 부착된 광고 포스터", "main_objects": ["스마트폰", "크로스백", "지하철 좌석", "손잡이 봉"], "photo_category": "PERSON"}];
+let selectedCategory = 'ALL';
+
+function selectCategory(cat, btn) {
+    selectedCategory = cat;
+    document.querySelectorAll('.filter-chips .chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+}
+
+function render() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    const grid = document.getElementById('photoGrid');
+    grid.innerHTML = '';
+    
+    const filtered = photos.filter(p => {
+        if (selectedCategory !== 'ALL' && p.photo_category !== selectedCategory) {
+            return false;
+        }
+        if (!q) return true;
+        
+        const haystack = [
+            p.id,
+            p.file_path,
+            p.photo_category || '',
+            p.captured_date || '',
+            p.location_name || '',
+            p.people_traits || '',
+            p.atmosphere || '',
+            p.background_details || '',
+            (p.main_objects || []).join(' ')
+        ].join(' ').toLowerCase();
+        
+        return haystack.includes(q);
+    });
+    
+    document.getElementById('statsBar').innerText = `검색 결과: ${filtered.length} / 108장`;
+    
+    filtered.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        
+        const cat = p.photo_category || 'OTHER';
+        const filename = p.file_path.split('/').pop();
+        const imgPath = window.location.protocol.startsWith('http') ? `/photos/${filename}` : '../' + p.file_path;
+        
+        let objectsHtml = '<span class="no-data">사물 정보 없음</span>';
+        if (p.main_objects && p.main_objects.length > 0) {
+            objectsHtml = p.main_objects.map(obj => `<span class="tag-pill">#${obj}</span>`).join('');
+        }
+        
+        card.innerHTML = `
+            <div class="card-img-wrap">
+                <span class="badge-cat cat-${cat}">${cat}</span>
+                <img src="${imgPath}" alt="${p.id}" loading="lazy" onerror="this.onerror=null; this.src='https://placehold.co/400x300?text=No+Image';">
+                <span class="badge-id">${p.id}</span>
+            </div>
+            <div class="card-body">
+                <div class="row-meta">
+                    <span class="date">📅 ${p.captured_date || '<span class="no-data">EXIF 결측</span>'}</span>
+                    <span>📍 ${p.location_name || '<span class="no-data">위치 미상</span>'}</span>
+                </div>
+                
+                ${p.people_traits ? `
+                <div class="meta-field">
+                    <div class="meta-label">👥 인물 외형 / 의상</div>
+                    <div class="meta-value">${p.people_traits}</div>
+                </div>` : ''}
+                
+                ${p.background_details ? `
+                <div class="meta-field">
+                    <div class="meta-label">🎨 미시적 배경 특징</div>
+                    <div class="meta-value">${p.background_details}</div>
+                </div>` : ''}
+                
+                ${p.atmosphere ? `
+                <div class="meta-field">
+                    <div class="meta-label">✨ 분위기 / 시간대</div>
+                    <div class="meta-value">${p.atmosphere}</div>
+                </div>` : ''}
+                
+                <div class="meta-field">
+                    <div class="meta-label">🏷️ 주요 사물 (Objects)</div>
+                    <div style="margin-top: 4px;">${objectsHtml}</div>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+render();
+</script>
+
+</body>
+</html>
