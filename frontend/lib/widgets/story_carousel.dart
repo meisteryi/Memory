@@ -1,15 +1,14 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../models/photo_model.dart';
 import '../services/api_service.dart';
 
+/// 가로 스크롤 사진 스트립 (같은 날 / 비슷한 분위기 공용)
 class StoryCarousel extends StatelessWidget {
-  final String dateText;
   final List<PhotoItem> photos;
   final Function(PhotoItem) onPhotoSelected;
 
   const StoryCarousel({
     super.key,
-    required this.dateText,
     required this.photos,
     required this.onPhotoSelected,
   });
@@ -20,49 +19,9 @@ class StoryCarousel extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final theme = Theme.of(context);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.auto_stories_rounded,
-                  size: 20,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                '📅 $dateText 그날의 발자취',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '${photos.length}장의 기억',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 6),
         SizedBox(
           height: 180,
           child: ListView.builder(

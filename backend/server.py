@@ -83,6 +83,31 @@ def _to_photo_item(row: Dict[str, Any]) -> PhotoItem:
         main_objects=row.get("main_objects", [])
     )
 
+def _find_similar_mood_photos(
+    target_dict: Dict[str, Any],
+    exclude_ids: List[str],
+    limit: int = 10
+) -> List[Dict[str, Any]]:
+    """비슷한 분위기 확장: 타겟 사진의 분위기/배경 묘사로 벡터 검색 (타겟·당일 사진 제외)"""
+    mood_text = " ".join(
+        str(target_dict.get(k) or "")
+        for k in ("atmosphere", "background_details", "photo_category")
+    ).strip()
+    if not mood_text:
+        return []
+    exclude = set(exclude_ids)
+    matches = get_vector_store().query_similar(query_text=mood_text, n_results=limit + len(exclude))
+    results: List[Dict[str, Any]] = []
+    for m in matches:
+        if m["id"] in exclude:
+            continue
+        row = get_photo_by_id(m["id"])
+        if row:
+            results.append(row)
+        if len(results) >= limit:
+            break
+    return results
+
 def _extract_query_keywords(text: str) -> List[str]:
     """검색어에서 주요 시각 단서 키워드 추출 (불용어 제외)"""
     stop_words = {"사진", "찾아줘", "보여줘", "찍은", "에서", "앞에서", "으로", "이랑", "하고", "있는", "있었던", "했던", "그때", "거", "것", "쯤", "날"}
@@ -293,6 +318,10 @@ def search_photos(req: SearchRequest):
         window_days=1,
         limit=10
     )
+    similar_photos_dict = _find_similar_mood_photos(
+        target_dict,
+        exclude_ids=[target_dict["id"]] + [r["id"] for r in day_story_photos_dict],
+    )
 
     xai_tags = _generate_xai_tags(target_dict, parsed, req.query)
 
@@ -303,6 +332,7 @@ def search_photos(req: SearchRequest):
         xai_tags=xai_tags,
         day_story_photos=[_to_photo_item(r) for r in day_story_photos_dict],
         day_story_date=target_date,
+        similar_photos=[_to_photo_item(r) for r in similar_photos_dict],
         parsed_query=parsed,
         fallback_used=fallback_used
     )
@@ -380,6 +410,10 @@ def chat_and_clarify(req: ChatRequest):
         window_days=1,
         limit=10
     )
+    similar_photos_dict = _find_similar_mood_photos(
+        target_dict,
+        exclude_ids=[target_dict["id"]] + [r["id"] for r in day_story_photos_dict],
+    )
 
     # 복합 컨텍스트를 반영한 태그
     combined_query_context = " ".join([m.content for m in history if m.role == "user"])
@@ -396,6 +430,7 @@ def chat_and_clarify(req: ChatRequest):
         xai_tags=xai_tags,
         day_story_photos=[_to_photo_item(r) for r in day_story_photos_dict],
         day_story_date=target_date,
+        similar_photos=[_to_photo_item(r) for r in similar_photos_dict],
         parsed_query=parsed,
         fallback_used=fallback_used
     )

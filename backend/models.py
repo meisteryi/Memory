@@ -64,6 +64,7 @@ class SearchResponse(BaseModel):
     xai_tags: List[str] = Field(default_factory=list)
     day_story_photos: List[PhotoItem] = Field(default_factory=list)
     day_story_date: Optional[str] = None
+    similar_photos: List[PhotoItem] = Field(default_factory=list)
     parsed_query: Optional[ParsedUserQuery] = None
     fallback_used: bool = False
 

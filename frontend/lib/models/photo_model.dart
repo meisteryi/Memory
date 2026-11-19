@@ -34,8 +34,12 @@ class PhotoItem {
       imageUrl: json['image_url'] ?? '',
       photoCategory: json['photo_category'],
       capturedDate: json['captured_date'],
-      gpsLatitude: json['gps_latitude'] != null ? (json['gps_latitude'] as num).toDouble() : null,
-      gpsLongitude: json['gps_longitude'] != null ? (json['gps_longitude'] as num).toDouble() : null,
+      gpsLatitude: json['gps_latitude'] != null
+          ? (json['gps_latitude'] as num).toDouble()
+          : null,
+      gpsLongitude: json['gps_longitude'] != null
+          ? (json['gps_longitude'] as num).toDouble()
+          : null,
       locationName: json['location_name'],
       peopleTraits: json['people_traits'],
       atmosphere: json['atmosphere'],
@@ -91,6 +95,7 @@ class SearchResponse {
   final List<String> xaiTags;
   final List<PhotoItem> dayStoryPhotos;
   final String? dayStoryDate;
+  final List<PhotoItem> similarPhotos;
   final ParsedUserQuery? parsedQuery;
   final bool fallbackUsed;
 
@@ -102,6 +107,7 @@ class SearchResponse {
     this.xaiTags = const [],
     this.dayStoryPhotos = const [],
     this.dayStoryDate,
+    this.similarPhotos = const [],
     this.parsedQuery,
     this.fallbackUsed = false,
   });
@@ -116,13 +122,20 @@ class SearchResponse {
       targetPhoto: json['target_photo'] != null
           ? PhotoItem.fromJson(json['target_photo'])
           : null,
-      xaiTags: json['xai_tags'] != null ? List<String>.from(json['xai_tags']) : [],
+      xaiTags: json['xai_tags'] != null
+          ? List<String>.from(json['xai_tags'])
+          : [],
       dayStoryPhotos: json['day_story_photos'] != null
           ? (json['day_story_photos'] as List)
-              .map((e) => PhotoItem.fromJson(e))
-              .toList()
+                .map((e) => PhotoItem.fromJson(e))
+                .toList()
           : [],
       dayStoryDate: json['day_story_date'],
+      similarPhotos: json['similar_photos'] != null
+          ? (json['similar_photos'] as List)
+                .map((e) => PhotoItem.fromJson(e))
+                .toList()
+          : [],
       parsedQuery: json['parsed_query'] != null
           ? ParsedUserQuery.fromJson(json['parsed_query'])
           : null,
@@ -142,9 +155,5 @@ class ChatMessageModel {
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
-  Map<String, dynamic> toJson() => {
-        'role': role,
-        'content': content,
-      };
+  Map<String, dynamic> toJson() => {'role': role, 'content': content};
 }
-
